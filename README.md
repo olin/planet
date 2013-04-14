@@ -16,3 +16,20 @@ Planet is currently being built by Noam Rubin and Aman Kapur.
 heroku url: http://halpv2.herokuapp.com/
 heroku git url: git@heroku.com:halpv2.git
 
+
+
+# developer notes
+
+so these in order to get dev env setup:
+
+````
+python setup.py
+python db_create.py
+python db_migrate.py
+````
+
+you are now ready to test the app:
+
+````
+python app.py
+````
