@@ -8,9 +8,9 @@ class Course(db.Model):
 
     prefix_name = db.Column(db.String(150), index = True, unique = True)
     name = db.Column(db.String(150), index = True, unique = True)
-    class_code = db.Column(db.String(150), index = True)
-    class_number = db.Column(db.String(150), index = True)
-    class_section = db.Column(db.String(150), index = True)
+    course_code = db.Column(db.String(150), index = True)
+    course_number = db.Column(db.String(150), index = True)
+    course_section = db.Column(db.String(150), index = True)
     term = db.Column(db.String(150), index = True)
     year = db.Column(db.String(150), index = True)
     program = db.Column(db.String(150), index = True)
@@ -29,4 +29,15 @@ class Course(db.Model):
     # prereqs = db.relationship('Course', backref = 'course', lazy = 'dynamic')
     
     def __repr__(self):
-        return '<User %r>' % (self.nickname)
+        return '<%s %s>' % (self.course_code+self.course_number,self.name)
+    
+
+class Student(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    name = db.Column(db.String(150))
+    courses = db.Column(db.PickleType) #array of course codes (strings)
+    major_type = db.Column(db.String(150))
+    major_name = db.Column(db.String(150))
+
+    def __repr__(self):
+        return '<User %r>' % (self.name)
