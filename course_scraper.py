@@ -2,7 +2,7 @@
 This little script scrapes wikis.olin.edu for the course catalog and updates the Planet db with the latest courses at olin college
 """
 import requests
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import re
 
 oie_url = "http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:oie"
@@ -12,7 +12,7 @@ mth_url = "http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:mth"
 sci_url = "http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:sci"
 
 
-def get_all_couses():
+def get_all_courses():
 	urls = ["http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:engr", "http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:mth", "http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:sci"]
 	all_courses = []
 	for url in urls:
@@ -24,26 +24,69 @@ def scrape(url):
 
 	soup = BeautifulSoup(r.text)
 
-	mydiv = soup.find("div",{'class':'level3'})
-	ps = mydiv.findAll('p')
 	if "ahs" in url:
-		attributes = [ps[i] for i in range(3,len(ps),2)]
-		descriptions = [ps[i] for i in range(2,len(ps),2)]
+		mydivs = soup.findAll("div",{"class":"level3"})
+		foundations = mydivs[0].findAll('p')
+		others = mydivs[1].findAll('p')
+		found_attrs,found_descriptions = smart_course_parser(foundations)
+		# other_attrs,other_descriptions = smart_course_parser(others)
+		attributes = found_attrs# + other_attrs;
+		descriptions = found_descriptions# + other_descriptions
 	else:
+		mydiv = soup.find("div",{"class":"level3"})
+		ps = mydiv.findAll('p')
 		attributes = [ps[i] for i in range(0,len(ps),2)]
 		descriptions = [ps[i] for i in range(1,len(ps),2)]
-	courses = []
-	for index, attr in enumerate(attributes):
-		course = parse_attributes(attr)
-		course['description'] = parse_description(descriptions[index])
-		courses.append(course)
-	return courses
+	# print len(attributes),len(descriptions),attributes
+	# courses = []
+	# for index, attr in enumerate(attributes):
+	# 	course = parse_attributes(attr)
+	# 	course['description'] = parse_description(descriptions[index])
+	# 	courses.append(course)
+	# return courses
+
+def smart_course_parser(ps):
+	"""
+	Assume the first thing is a course description
+	"""
+	attributes = []
+	descriptions = []
+	this_description = []
+	proc_ps = [p for p in ps[1:] if len(p)>0] #remove some empty items and remove any preamble
+	attr_index = [proc_ps.index(p) for p in proc_ps if p.find("strong")] #the indices of all of our course descriptions
+	attr_index.append(len(proc_ps))
+	print attr_index
+	description_index_range = [(attr_index[i], attr_index[i+1]) for i in range(len(attr_index)-1)]
+	descriptions = [proc_ps[ind[0]+1:ind[1]] for ind in description_index_range]
+	print descriptions
+	# print ps
+	# if not ps[0].find("strong"):
+	# 	ps = ps[2:]
+	# proc_ps = proc_ps[1:]
+	for p in proc_ps:
+		if p.find("strong"):
+			attributes.append(p)
+			descriptions.append(this_description)
+			this_description = []
+		else:
+			this_description += p
+	return attributes,descriptions
 
 def parse_description(description):	
-	return description.getText();
+	"descriptions are made of tags and navigable strings"
+	parsed = ""
+	if type(description) is list:
+		for item in description:
+			try:
+				parsed += unicode(item)
+			except:
+				pass
+	else:
+		parsed = description.get_text();
+	return parsed
 
 def parse_attributes(attribute):  
-	attr_str = attribute.getText('|');
+	attr_str = attribute.get_text('|');
 	fake_table = attr_str.split('|')[1:-2] #remove some extra tags a the beginning and end
 	attribute_dict = {}
 	for row in fake_table:
@@ -84,4 +127,4 @@ def parse_attributes(attribute):
 
 
 if __name__ == '__main__':
-	get_all_couses()
+	print scrape(ahs_url)
