@@ -39,10 +39,11 @@ def scrape(url):
 	print len(attributes),len(descriptions)
 	courses = []
 	for index, attr in enumerate(attributes):
-		course = parse_attributes(attr)
-		course['description'] =descriptions[index]
-		courses.append(course)
-	return courses
+		# course = parse_attributes(attr)
+		parse_attributes(attr)
+		# course['description'] =descriptions[index]
+		# courses.append(course)
+	# return courses
 
 def smart_course_parser(ps):
 	attributes = []
@@ -69,25 +70,38 @@ def parse_attributes(attribute):
 	"""
 	Let's make some assumptions about the structure of attributes:
 	The first line is the course code and course number (e.g. AHSE 1155)
-	The second line is the course title (e.g. Identity from the Mind and the Brain)
+	Everything from the second line to the first colon is the title.
 	All following rows take the form of key:attr
 	"""
 	attr_dict = {}
-	attr_str = attribute.get_text();
+	attr_str = attribute.get_text().encode('utf-8'); #some funny characters cause errors so lets re-encode
 	lines = [line for line in attr_str.split('\n') if len(line)>0]
 	course_code_and_number = lines.pop(0)
+	if "ENGR 3520" in course_code_and_number:
+		print "focs this"
+		return "fuck off", "fuck tthat" #fill in with FOCS info
 	course_code_and_number = course_code_and_number.split(' ')
-	title = lines.pop(0)
+	attr_str_no_code = "\n".join(lines) #line immediately after code is title, second line may also be title
+	first_key = attr_str_no_code.index("Credits")
+	title = attr_str_no_code[0:first_key]
 	attr_dict["title"] = title
 	attr_dict["course_code"] = course_code_and_number[0]
 	attr_dict["course_number"] = course_code_and_number[1]
-	for line in lines:
-		print line
-		colon_index = line.index(':')
-		key = line[0:colon_index]
-		val = line[colon_index+1:]
-		attr_dict[key] = val
-	return attr_dict
+	attr_str_no_code_no_title = attr_str_no_code[first_key:]
+	lines = attr_str_no_code_no_title.split("\n")
+	linesForParsing = "|".join(lines).split(":") #structure for all keys other than first is |key:value
+	linesForParsing[0] = "|" + linesForParsing[0]
+	linesForParsing[len(linesForParsing)-1] = "|" + linesForParsing[len(linesForParsing)-1]
+	print "?".join(linesForParsing).split("|")
+	# for line in lines:
+
+	# for line in lines:
+	# 	print line
+	# 	colon_index = line.index(':')
+	# 	key = line[0:colon_index]
+	# 	val = line[colon_index+1:]
+	# 	attr_dict[key] = val
+	# return attr_dict
 	# fake_table = attr_str.split('|')[1:-2] #remove some extra tags a the beginning and end
 	# attribute_dict = {}
 	# for row in fake_table:
@@ -130,3 +144,6 @@ def parse_attributes(attribute):
 
 if __name__ == '__main__':
 	scrape(engr_url)
+	scrape(sci_url)
+	scrape(mth_url)
+	scrape(ahs_url)
