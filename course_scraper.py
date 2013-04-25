@@ -35,15 +35,13 @@ def scrape(url):
 	else:
 		mydiv = soup.find("div",{"class":"level3"})
 		ps = mydiv.findAll('p')
-		attributes,descriptions =smart_course_parser(ps)
-	print len(attributes),len(descriptions)
+		attributes,descriptions = smart_course_parser(ps)
 	courses = []
 	for index, attr in enumerate(attributes):
-		# course = parse_attributes(attr)
-		parse_attributes(attr)
-		# course['description'] =descriptions[index]
-		# courses.append(course)
-	# return courses
+		course = parse_attributes(attr)
+		course['description'] =descriptions[index]
+		courses.append(course)
+	return courses
 
 def smart_course_parser(ps):
 	attributes = []
@@ -73,13 +71,11 @@ def parse_attributes(attribute):
 	Everything from the second line to the first colon is the title.
 	All following rows take the form of key:attr
 	"""
+	known_keys = ["Credits","Hours","Prerequisites:","Prerequisite:","Pre/Co-requisites:","Co-requisites:", "Co-requisite:","Usually offered","For information contact"] #the order of the requisite keywords is critical
 	attr_dict = {}
-	attr_str = attribute.get_text().encode('utf-8'); #some funny characters cause errors so lets re-encode
+	attr_str = attribute.get_text().encode('utf-8') #some funny characters cause errors so lets re-encode
 	lines = [line for line in attr_str.split('\n') if len(line)>0]
 	course_code_and_number = lines.pop(0)
-	if "ENGR 3520" in course_code_and_number:
-		print "focs this"
-		return "fuck off", "fuck tthat" #fill in with FOCS info
 	course_code_and_number = course_code_and_number.split(' ')
 	attr_str_no_code = "\n".join(lines) #line immediately after code is title, second line may also be title
 	first_key = attr_str_no_code.index("Credits")
@@ -88,62 +84,19 @@ def parse_attributes(attribute):
 	attr_dict["course_code"] = course_code_and_number[0]
 	attr_dict["course_number"] = course_code_and_number[1]
 	attr_str_no_code_no_title = attr_str_no_code[first_key:]
-	lines = attr_str_no_code_no_title.split("\n")
-	linesForParsing = "|".join(lines).split(":") #structure for all keys other than first is |key:value
-	linesForParsing[0] = "|" + linesForParsing[0]
-	linesForParsing[len(linesForParsing)-1] = "|" + linesForParsing[len(linesForParsing)-1]
-	print "?".join(linesForParsing).split("|")
-	# for line in lines:
-
-	# for line in lines:
-	# 	print line
-	# 	colon_index = line.index(':')
-	# 	key = line[0:colon_index]
-	# 	val = line[colon_index+1:]
-	# 	attr_dict[key] = val
-	# return attr_dict
-	# fake_table = attr_str.split('|')[1:-2] #remove some extra tags a the beginning and end
-	# attribute_dict = {}
-	# for row in fake_table:
-	# 	print row.encode('utf-8')
-	# 	re_obj = re.search(r'\d\d\d\d',row) #number with four digits
-	# 	if re_obj is not None and 'Co-requisites' not in row and 'Prerequisites' not in row:
-	# 		try:
-	# 			course_code, course_number = row.split(' ')
-	# 			attribute_dict['course_code'] = course_code
-	# 			attribute_dict['course_number'] = course_number
-	# 		except ValueError:
-	# 			#Error occurs because pre-reqs format bizarrely
-	# 			pass
-	# 	elif 'Credits' in row:
-	# 		credits = row.split(' ')[1]
-	# 		attribute_dict['credits'] = credits
-	# 	elif 'Hours' in row:
-	# 		hours = row.split(' ')[1]
-	# 		attribute_dict['hours'] = hours
-	# 	elif 'Prerequisites' in row or 'Co-requisites' in row:
-	# 		colon_index = row.index(':')+1
-	# 		prereqs = row[colon_index:]
-	# 		attribute_dict['prereqs'] = prereqs
-	# 	elif 'Usually offered' in row:
-	# 		colon_index = row.index(':')+1
-	# 		offered = row[colon_index:]
-	# 		attribute_dict['offered'] = offered
-	# 	elif 'Grading Type' in row:
-	# 		colon_index = row.index(':')+1
-	# 		grading= row[colon_index:]
-	# 		attribute_dict['grading'] = grading
-	# 	elif 'For information contact' in row:
-	# 		colon_index = row.index(':')+1
-	# 		contact = row[colon_index:]
-	# 		attribute_dict['contact'] = contact
-	# 	else:
-	# 		attribute_dict['name'] = row
-	# return attribute_dict
-
+	known_keys_indices = []
+	for k in known_keys:
+		if k in attr_str_no_code_no_title:
+			ind = attr_str_no_code_no_title.index(k)
+			e_ind = ind+len(k)
+			known_keys_indices.extend([ind,e_ind])
+	tuples = [(known_keys_indices[i], known_keys_indices[i+1]) for i in range(len(known_keys_indices)-2)]
+	substrings = [attr_str_no_code_no_title[t[0]:t[1]] for t in tuples]
+	keys = [substrings[i] for i in range(0,len(substrings),2)]
+	vals = [substrings[i] for i in range(1,len(substrings),2)]
+	for k,v in zip(keys,vals):
+		attr_dict[k] = v
+	return attr_dict
 
 if __name__ == '__main__':
-	scrape(engr_url)
-	scrape(sci_url)
-	scrape(mth_url)
-	scrape(ahs_url)
+	get_all_courses()
