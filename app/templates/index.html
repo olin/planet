@@ -3,4 +3,48 @@
 
 {% block content %}
 <h1> Welcome to Planet! </h1>
+<h2> Add a course:</h2>
+<form action="/newcourse">
+	<div>
+		<label for="course_title">Course Title:</label>
+		<input type="text" id="course_title" /> <span> e.g.: Introduction to Microelectronic Circuits</span>
+	</div>
+	<div>
+		<label for="course_code">Course Code:</label>
+		<input type="text" id="course_code" /> <span> e.g.: ENGR</span>
+	</div>
+	<div>
+		<label for="course_number">Course Number:</label>
+		<input type="text" id="course_number" /> <span> e.g.: 3199</span>
+	</div>
+	<div>
+		<label for="offered">Usually Offered:</label>	
+		<input type="text" id="offered" /> <span> e.g.: Spring</span>
+	</div>
+	<div>
+		<label for="num_credits">Number of Credits</label>
+		<input type="text" id="num_credits" /> <span> e.g.: 4</span>
+	</div>
+	<div>
+		<label for="type_credits">Type of Credits</label>
+		<input type="text" id="type_credits" /> <span> e.g.: ENGR</span>
+	</div>
+	<div>
+		<label for="req">Pre/Corequisites</label>
+		<input type="text" id="req" /> <span> e.g.: SCI2199</span>
+	</div>
+</form>
+
+<h2>Here are your current course stats:</h2>
+<h3> Credit Breakdown: <h3>
+	<div>
+		<span>ENGR:</span> <span id="engr_creds"> 0</span>
+	</div><div>
+		<span>MTH:</span> <span id="mth_creds"> 0</span>
+	</div><div>	
+		<span>SCI:</span> <span id="sci_creds"> 0</span>
+	</div><div>
+		<span>AHSE:</span> <span id="ahse_creds"> 0</span>
+
+	</div>
 {% endblock %}

@@ -7,7 +7,10 @@ import re
 
 
 def get_all_courses():
-	urls = ["http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:ahs","http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:engr", "http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:mth", "http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:sci"]
+	urls = ["http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:ahs",\
+	"http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:engr", \
+	"http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:mth", \
+	"http://wikis.olin.edu/coursecatalog/doku.php?id=course_listings:sci"]
 	all_courses = []
 	for url in urls:
 		all_courses += scrape(url)
@@ -15,7 +18,7 @@ def get_all_courses():
 
 def scrape(url):
 	"""
-	This method takes a url of an Olin Course Listing Wiki and returns the dictionary mapping a source and its attributes
+	This function takes a url of an Olin Course Listing Wiki and returns the dictionary mapping a source and its attributes
 	"""
 	r = requests.get(url) #get the webpage
 	soup = BeautifulSoup(r.text) #prepare it for processing
@@ -61,7 +64,7 @@ def smart_course_parser(ps):
 	#turn the list of attribute indices into a range of indicies where descriptions live
 	description_index_range = [(attr_index[i], attr_index[i+1]) for i in range(len(attr_index)-1)] #forming tuples for ranging
 	raw_descriptions = [proc_ps[ind[0]+1:ind[1]] for ind in description_index_range] #use the desc index range to grab all the p's used as descriptions
-	
+
 	#run through the descriptions and append all like descriptions into strings
 	for p_list in raw_descriptions:
 		this_description = ""
@@ -78,33 +81,69 @@ def parse_attributes(attribute):
 	Everything from the second line to the first colon is the title.
 	All following rows take the form of key:attr
 	"""
+	#these are all the known attribute categories. Note the order of "...requisite..."
 	known_keys = ["Credits","Hours","Prerequisites:","Prerequisite:","Pre/Co-requisites:","Co-requisites:", "Co-requisite:","Usually offered","For information contact"] #the order of the requisite keywords is critical
 	attr_dict = {}
 
 	attr_str = attribute.get_text().encode('utf-8') #some funny characters cause errors so lets re-encode
-	lines = [line for line in attr_str.split('\n') if len(line)>0]
-	course_code_and_number = lines.pop(0)
-	course_code_and_number = course_code_and_number.split(' ')
-	attr_str_no_code = "\n".join(lines) #line immediately after code is title, second line may also be title
+	lines = [line for line in attr_str.split('\n') if len(line)>0] #separate by lines and remove blank lines
+	course_code_and_number = lines.pop(0) #header is always the course code and number
+	unique_readable_id = "".join(course_code_and_number.split(" ")) #the code and number combined form a course ID that is human readable and unique
+	course_code_and_number = course_code_and_number.split(" ")
+	attr_str_no_code = "\n".join(lines) 
+	#line immediately after code is title, second line may also be title
 	first_key = attr_str_no_code.index("Credits")
 	title = attr_str_no_code[0:first_key]
 	attr_dict["title"] = title.replace("\n","")
 	attr_dict["course_code"] = course_code_and_number[0].replace("\n","")
 	attr_dict["course_number"] = course_code_and_number[1].replace("\n","")
+	attr_dict["unique_readable_id"] = unique_readable_id
 	attr_str_no_code_no_title = attr_str_no_code[first_key:]
 	known_keys_indices = []
-	for k in known_keys:
+	for k in known_keys: #go through all the known keys
 		if k in attr_str_no_code_no_title:
-			ind = attr_str_no_code_no_title.index(k)
-			e_ind = ind+len(k)
-			known_keys_indices.extend([ind,e_ind])
+			ind = attr_str_no_code_no_title.index(k) #get the index where the keyword occurs
+			e_ind = ind+len(k) #get the index where the key ends
+			known_keys_indices.extend([ind,e_ind]) #add the range of the key to the list of keyword indices
+	#create a series of (keyword_begin, keyword_end) index ranges
 	tuples = [(known_keys_indices[i], known_keys_indices[i+1]) for i in range(len(known_keys_indices)-2)]
+	#create a list of "previous value \n next key" substrings
 	substrings = [attr_str_no_code_no_title[t[0]:t[1]] for t in tuples]
-	keys = [substrings[i].replace("\n","") for i in range(0,len(substrings),2)]
+	print substrings
+	#all even substrings are keys
+	keys = [substrings[i].replace("\n","").replace(":","") for i in range(0,len(substrings),2)]
+	#all odd substrings are values
 	vals = [substrings[i].replace("\n","").replace(":","") for i in range(1,len(substrings),2)]
 	for k,v in zip(keys,vals):
 		attr_dict[k] = v
+	#need todo some special parsing for credits
+	credit_string = attr_dict["Credits"]
+	credit_string_split = credit_string.split(" ")
+	non_empty_credit_string_split = [c for c in credit_string_split if len(c)>0]
+	credit_dict = {}
+	credit_names = ["MTH","AHSE","AHS","SCI","ENGR","SUST"]
+	num_total_credits = 0
+	credit_types = []
+	for credit_name in credit_names:
+		if credit_name in non_empty_credit_string_split:
+			credit_types.append(credit_name)
+			credit_name_index = non_empty_credit_string_split.index(credit_name)
+			num_credits = int(non_empty_credit_string_split[credit_name_index-1])
+			num_total_credits += num_credits
+			credit_dict[credit_name] = num_credits
+	attr_dict["credit_distribution"] = credit_dict
+	attr_dict["credit_types"] = credit_types
+	attr_dict["num_total_credits"] = num_total_credits
+
+	#there are a bunch of spaces, so let's find the first two non-empty indices
 	return attr_dict
 
 if __name__ == '__main__':
-	print get_all_courses()
+	import pickle
+	a = get_all_courses();
+	b = a[100]
+	print b.keys()
+	print b
+	f = open("courses.txt","wb")
+	pickle.dump(get_all_courses(),f);
+	f.close()
