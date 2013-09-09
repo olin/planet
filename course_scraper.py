@@ -3,7 +3,7 @@ This little script scrapes wikis.olin.edu for the course catalog and updates the
 """
 import requests
 from bs4 import BeautifulSoup
-import re
+# import re
 
 
 def get_all_courses():
@@ -99,17 +99,50 @@ def parse_attributes(attribute):
 	attr_dict["course_number"] = course_code_and_number[1].replace("\n","")
 	attr_dict["unique_readable_id"] = unique_readable_id
 	attr_str_no_code_no_title = attr_str_no_code[first_key:]
-	contact_index = attr_str_no_code_no_title.find("For information contact")
-	contact_string = attr_str_no_code_no_title[contact_index:]
-	try:
-		contacts_raw = contact_string.split(":")[1].replace("and","|").replace(",","|").replace("Professors","").replace("Professor","").replace("or","|")
-	except:
-		print "*****"
-		print attr_str
-		print "*****"
-	#.split("|")
-	# print contacts_raw
-	contacts = []
+	contact_index = attr_str_no_code_no_title.lower().find("for information contact")
+	note_index = attr_str_no_code_no_title.lower().find("NOTE: ")
+	if note_index == -1:
+		contact_string = attr_str_no_code_no_title[contact_index:note_index]
+	else:
+		contact_string = attr_str_no_code_no_title[contact_index:]
+	contacts_raw = contact_string.split(":")[1].replace(" and ","|").replace(",","|").replace("Professors","").replace("Professor","").replace(" or ","|").replace("\n","").strip()
+	contacts_raw_list = contacts_raw.split("|")
+	for i in xrange(len(contacts_raw_list)):
+		if contacts_raw_list[i] == "John Gedde":
+			contacts_raw_list[i] = "John Geddes"
+		if contacts_raw_list[i] == "Alisha Sarang-Sieminski NOTE" or contacts_raw_list[i] == "Alisha Sarang-Sieminsk":
+			contacts_raw_list[i] = "Alisha Sarang-Sieminski"
+		if contacts_raw_list[i] == "Debbie Chachr":
+			contacts_raw_list[i] = "Debbie Chachra"
+		if contacts_raw_list[i] == "Brian Store":
+			contacts_raw_list[i] = "Brian Storey"
+		if contacts_raw_list[i] == "Gillian Epstei":
+			contacts_raw_list[i] = "Gillian Epstein"
+		if contacts_raw_list[i] == "Sarah Spence Adam":
+			contacts_raw_list[i] = "Sarah Spence Adams"
+		if contacts_raw_list[i] == "Mark Somervill":
+			contacts_raw_list[i] = "Mark Somerville"
+		if contacts_raw_list[i] == "David Barret":
+			contacts_raw_list[i] = "David Barrett"
+		if contacts_raw_list[i] == "Christopher Le":
+			contacts_raw_list[i] = "Christopher Lee"
+		if contacts_raw_list[i] == "Ozgur Eri":
+			contacts_raw_list[i] = "Ozgur Eris"
+		if contacts_raw_list[i] == "Robert Martell":
+			contacts_raw_list[i] = "Robert Martello"
+		if contacts_raw_list[i] == "Allen Downe":
+			contacts_raw_list[i] = "Allen Downey"
+		if contacts_raw_list[i] == "Mark Chan":
+			contacts_raw_list[i] = "Mark Chang"
+		if contacts_raw_list[i] == "Benjamin Linde":
+			contacts_raw_list[i] = "Benjamin Linder"
+		if contacts_raw_list[i] == "Sherra Kern":
+			contacts_raw_list[i] = "Sherra Kerns"
+		if contacts_raw_list[i] == "Jos\xc3\xa9 Oscar Mur-Miranda":
+			contacts_raw_list[i] = "Jose Oscar Mur-Miranda"
+		if contacts_raw_list[i] == "Yevgeniya V. Zastavke":
+			contacts_raw_list[i] = "Yevgeniya V. Zastavker"
+	print contacts_raw_list, title
 	known_keys_indices = []
 	for k in known_keys: #go through all the known keys
 		if k in attr_str_no_code_no_title:
