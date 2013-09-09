@@ -99,6 +99,17 @@ def parse_attributes(attribute):
 	attr_dict["course_number"] = course_code_and_number[1].replace("\n","")
 	attr_dict["unique_readable_id"] = unique_readable_id
 	attr_str_no_code_no_title = attr_str_no_code[first_key:]
+	contact_index = attr_str_no_code_no_title.find("For information contact")
+	contact_string = attr_str_no_code_no_title[contact_index:]
+	try:
+		contacts_raw = contact_string.split(":")[1].replace("and","|").replace(",","|").replace("Professors","").replace("Professor","").replace("or","|")
+	except:
+		print "*****"
+		print attr_str
+		print "*****"
+	#.split("|")
+	# print contacts_raw
+	contacts = []
 	known_keys_indices = []
 	for k in known_keys: #go through all the known keys
 		if k in attr_str_no_code_no_title:
@@ -109,7 +120,6 @@ def parse_attributes(attribute):
 	tuples = [(known_keys_indices[i], known_keys_indices[i+1]) for i in range(len(known_keys_indices)-2)]
 	#create a list of "previous value \n next key" substrings
 	substrings = [attr_str_no_code_no_title[t[0]:t[1]] for t in tuples]
-	print substrings
 	#all even substrings are keys
 	keys = [substrings[i].replace("\n","").replace(":","") for i in range(0,len(substrings),2)]
 	#all odd substrings are values
@@ -142,8 +152,8 @@ if __name__ == '__main__':
 	import pickle
 	a = get_all_courses();
 	b = a[100]
-	print b.keys()
-	print b
+	# print b.keys()
+	# print b
 	f = open("courses.txt","wb")
 	pickle.dump(get_all_courses(),f);
 	f.close()
