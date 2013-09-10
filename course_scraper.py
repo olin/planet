@@ -86,6 +86,8 @@ def parse_attributes(attribute):
 	attr_dict = {}
 
 	attr_str = attribute.get_text().encode('utf-8') #some funny characters cause errors so lets re-encode
+	attr_str.replace("The Digital Eye:","The Digital Eye")
+	print attr_str
 	lines = [line for line in attr_str.split('\n') if len(line)>0] #separate by lines and remove blank lines
 	course_code_and_number = lines.pop(0) #header is always the course code and number
 	unique_readable_id = "".join(course_code_and_number.split(" ")) #the code and number combined form a course ID that is human readable and unique
